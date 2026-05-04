@@ -9,20 +9,20 @@
   ],
   "license": "LGPL-2.1-only",
   "require": {
-    "php": ">=7.4 || ^8.0",
+    "php": "^8.1",
     "simplesamlphp/composer-module-installer": "^1.1",
     "league/oauth2-client": "^2.7",
-    "simplesamlphp/simplesamlphp": "^v2.0.0",
-    "firebase/php-jwt": "^5.5|^6",
+    "simplesamlphp/simplesamlphp": "^v2.3",
+    "firebase/php-jwt": "^5.5|^6|^7",
     "kevinrob/guzzle-cache-middleware": "^4.1.1",
     "psr/cache": "^1.0|^2.0|^3.0",
-    "symfony/cache": "^6.0|^5.0|^4.3|^3.4",
+    "symfony/cache": "^7.0|^6.0|^5.0",
     "ext-json": "*"
   },
   "require-dev": {
-    "simplesamlphp/simplesamlphp-test-framework": "^1.2",
-    "phpunit/phpunit": "^9.5",
-    "psalm/plugin-phpunit": "^0.18.3",
+    "simplesamlphp/simplesamlphp-test-framework": "^1.7",
+    "phpunit/phpunit": "^10",
+    "psalm/plugin-phpunit": "^0.19.0",
     "squizlabs/php_codesniffer": "^3.7"
   },
   "autoload": {
@@ -38,7 +38,9 @@
   "config": {
     "allow-plugins": {
       "simplesamlphp/composer-module-installer": true,
-      "dealerdirect/phpcodesniffer-composer-installer": false
+      "dealerdirect/phpcodesniffer-composer-installer": false,
+      "simplesamlphp/composer-xmlprovider-installer": false,
+      "phpstan/extension-installer": true
     }
   },
   "suggest": {
@@ -46,10 +48,9 @@
   },
   "scripts": {
     "validate": [
-      "vendor/bin/phpunit --no-coverage",
+      "vendor/bin/phpunit --no-coverage --testdox",
       "vendor/bin/phpcs -p",
-      "vendor/bin/psalm --clear-cache",
-      "vendor/bin/psalm --use-baseline=psalm-baseline.xml"
+      "vendor/bin/psalm --no-cache"
     ],
     "tests": [
       "vendor/bin/phpunit --no-coverage"

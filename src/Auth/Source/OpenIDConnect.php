@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SimpleSAML\Module\authoauth2\Auth\Source;
 
 use GuzzleHttp\HandlerStack;
@@ -12,6 +14,8 @@ use SimpleSAML\Auth\State;
 use SimpleSAML\Configuration;
 use SimpleSAML\Logger;
 use SimpleSAML\Module;
+use SimpleSAML\Module\authoauth2\Codebooks\LegacyRoutesEnum;
+use SimpleSAML\Module\authoauth2\Codebooks\RoutesEnum;
 use SimpleSAML\Module\authoauth2\Providers\OpenIDConnectProvider;
 use SimpleSAML\Utils\HTTP;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
@@ -35,27 +39,27 @@ class OpenIDConnect extends OAuth2
      * Only visible for testing
      *
      * Since SSP may serialize Auth modules we don't assign the potentially unserializable provider to a field.
-     * @param Configuration $config
+     *
+     * @param   Configuration  $config
+     *
      * @return AbstractProvider
+     * @throws \Exception
      */
     public function getProvider(Configuration $config): AbstractProvider
     {
         $provider = parent::getProvider($config);
         $httpClient = $provider->getHttpClient();
-        /**
-         * @psalm-suppress DeprecatedMethod
-         */
+        /** @psalm-suppress DeprecatedMethod */
         $handler = $httpClient->getConfig('handler');
         if (!($handler instanceof HandlerStack)) {
             $newhandler = HandlerStack::create();
+            /** @psalm-suppress MixedArgument */
             $newhandler->push($handler);
-            /**
-             * @psalm-suppress DeprecatedMethod
-             */
+            /** @psalm-suppress DeprecatedMethod */
             $httpClient->getConfig()['handler'] = $newhandler;
             $handler = $newhandler;
         }
-        $cacheDir = Configuration::getInstance()->getString('tempdir') . "/oidc-cache";
+        $cacheDir = Configuration::getInstance()->getString('cachedir') . '/oidc-cache';
         $handler->push(
             new CacheMiddleware(
                 new PrivateCacheStrategy(
@@ -69,10 +73,10 @@ class OpenIDConnect extends OAuth2
     }
 
     /**
-     * Convert values from the state parameter of the authenticate call into options to the authorization request.
+     * Convert values from the state parameter of the authenticated call into options to the authorization request.
      *
      * Any parameter prefixed with oidc: are added (without the prefix), in
-     * addition isPassive and ForceAuthn are converted into prompt=none and
+     * addition, isPassive and ForceAuthn are converted into prompt=none and
      * prompt=login respectively
      *
      * @param array $state
@@ -81,8 +85,13 @@ class OpenIDConnect extends OAuth2
     protected function getAuthorizeOptionsFromState(array &$state): array
     {
         $result = [];
+
+        /** @var array|string $value */
         foreach ($state as $key => $value) {
-            if (strpos($key, 'oidc:') === 0) {
+            if (
+                \is_string($key)
+                && strncmp($key, 'oidc:', 5) === 0
+            ) {
                 $result[substr($key, 5)] = $value;
             }
 
@@ -130,10 +139,10 @@ class OpenIDConnect extends OAuth2
         }
 
         // we don't want this parameter for SAML SPs
-//        if (array_key_exists('ForceAuthn', $state) && $state['ForceAuthn']) {
+//        if (\array_key_exists('ForceAuthn', $state) && $state['ForceAuthn']) {
 //            $result['prompt'] = 'login';
 //        }
-//        if (array_key_exists('isPassive', $state) && $state['isPassive']) {
+//        if (\array_key_exists('isPassive', $state) && $state['isPassive']) {
 //            $result['prompt'] = 'none';
 //        }
 
@@ -154,7 +163,7 @@ class OpenIDConnect extends OAuth2
         // all information are taken from user info endpoint in OAuth2 class
         // @todo remove calling user info endpoint in OAuth2 class, parse id token instead
 //        $prefix = $this->getAttributePrefix();
-        $id_token = $accessToken->getValues()['id_token'];
+        $id_token = (string)$accessToken->getValues()['id_token'];
 //        $id_token_claims = $this->extraIdTokenAttributes($id_token);
 //        $state['Attributes'] = array_merge($this->convertResourceOwnerAttributes(
 //            $id_token_claims,
@@ -198,11 +207,13 @@ class OpenIDConnect extends OAuth2
             Logger::debug("authoauth2: $providerLabel No id_token in state, not doing anything for logout");
             return;
         }
-        $id_token = $state['id_token'];
+        $id_token = (string)$state['id_token'];
 
         $postLogoutUrl = $this->config->getOptionalString('postLogoutRedirectUri', null);
         if (!$postLogoutUrl) {
-            $postLogoutUrl = Module::getModuleURL('authoauth2/loggedout.php');
+            $logoutRoute = $this->config->getOptionalBoolean('useLegacyRoutes', false) ?
+                LegacyRoutesEnum::LegacyLoggedOut->value : RoutesEnum::LoggedOut->value;
+            $postLogoutUrl = Module::getModuleURL("authoauth2/$logoutRoute");
         }
 
         // We are going to need the authId in order to retrieve this authentication source later, in the callback

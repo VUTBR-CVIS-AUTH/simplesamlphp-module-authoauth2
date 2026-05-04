@@ -33,13 +33,13 @@ If you are using this with a SAML IdP then you can map the Apple attributes to r
 
 ```php
     // saml20-idp-hosted.php
-$metadata['myEntityId'] = array(
-    'authproc' => array(
+$metadata['myEntityId'] = [
+    'authproc' => [
         // Convert oidc names to ldap friendly names
-        90 => array('class' => 'core:AttributeMap',  'authoauth2:apple2name'),
-    ),
+        90 => ['class' => 'core:AttributeMap',  'authoauth2:apple2name'],
+    ],
    // other IdP config options
-)
+]
 ```
 
 
@@ -78,3 +78,7 @@ docker run --name ssp-apple-oidc \
 Edit your `/etc/hosts` file to make `apple.test.idpproxy.illinois.edu` route to local host and then visit
  `https://apple.test.idpproxy.illinois.edu/simplesaml/module.php/core/authenticate.php?as=appleTest` to
 initiate a login to Apple. Non-secret values such as keyId and teamId
+
+# Documentation
+
+* [TN3107: Resolving Sign in with Apple response errors](https://developer.apple.com/documentation/technotes/tn3107-resolving-sign-in-with-apple-response-errors)

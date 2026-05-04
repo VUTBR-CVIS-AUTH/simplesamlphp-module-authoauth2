@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\SimpleSAML\Auth\Source;
 
 use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\GenericResourceOwner;
 use League\OAuth2\Client\Token\AccessToken;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
@@ -14,15 +17,15 @@ use Test\SimpleSAML\MockOAuth2Provider;
 class MicrosoftHybridAuthTest extends TestCase
 {
     /**
-     * @dataProvider combineOidcAndGraphProfileProvider
      * @param ?string $idToken The id_token response from the server
      * @param array $expectedAttributes The expected attributes
      */
+    #[DataProvider('combineOidcAndGraphProfileProvider')]
     public function testCombineOidcAndGraphProfile(
         ?string $idToken,
         array $authenticatedRequestAttributes,
         array $expectedAttributes
-    ) {
+    ): void {
         // given: A mock Oauth2 provider
         $code = 'theCode';
         $info = ['AuthId' => 'oauth2'];
@@ -33,9 +36,8 @@ class MicrosoftHybridAuthTest extends TestCase
         ];
         $state = [\SimpleSAML\Auth\State::ID => 'stateId'];
 
-        /**
-         * @var AbstractProvider|MockObject $mock
-         */
+        /** @var AbstractProvider $mock */
+        /** @psalm-suppress MixedMethodCall */
         $mock = $this->getMockBuilder(AbstractProvider::class)
             ->disableOriginalConstructor()
             ->getMock();
@@ -73,7 +75,7 @@ class MicrosoftHybridAuthTest extends TestCase
     }
 
 
-    public function combineOidcAndGraphProfileProvider()
+    public static function combineOidcAndGraphProfileProvider(): array
     {
         $expectedGraphAttributes = ['microsoft.id' => ['a76d6a7a097c1e9d'],
             'microsoft.@odata.context' => ['https://graph.microsoft.com/v1.0/$metadata#directoryObjects'],
@@ -117,18 +119,22 @@ class MicrosoftHybridAuthTest extends TestCase
                     'microsoft.@odata.context' => ['https://graph.microsoft.com/v1.0/$metadata#directoryObjects'],
                     'microsoft.value.0.@odata.type' => ['#microsoft.graph.group'],
                     'microsoft.value.0.id' => ['11111111-1111-1111-1111-111111111111'],
-                ]
+                    'microsoft.tid' => ['9188040d-6c67-4c5b-b11236a304b66dad'],
+                ],
             ],
-            [$validIdToken, $conflictedRequestAttributes, [
-                'microsoft.name' => ['Steve Stratus'],
-                'microsoft.mail' => ['steve.stratus@outlook.com'],
-                'microsoft.id' => ['11111111'],
-                'microsoft.@odata.context' => ['https://graph.microsoft.com/v1.0/$metadata#directoryObjects'],
-                'microsoft.value.0.@odata.type' => ['#microsoft.graph.group'],
-                'microsoft.value.0.id' => ['11111111-1111-1111-1111-111111111111'],
-            ]
+            [
+                $validIdToken,
+                $conflictedRequestAttributes,
+                [
+                    'microsoft.name' => ['Steve Stratus'],
+                    'microsoft.mail' => ['steve.stratus@outlook.com'],
+                    'microsoft.id' => ['11111111'],
+                    'microsoft.@odata.context' => ['https://graph.microsoft.com/v1.0/$metadata#directoryObjects'],
+                    'microsoft.value.0.@odata.type' => ['#microsoft.graph.group'],
+                    'microsoft.value.0.id' => ['11111111-1111-1111-1111-111111111111'],
+                    'microsoft.tid' => ['9188040d-6c67-4c5b-b11236a304b66dad'],
+                ],
             ],
-
         ];
     }
 }

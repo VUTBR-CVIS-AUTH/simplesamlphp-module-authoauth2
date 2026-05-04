@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SimpleSAML\Module\authoauth2\Auth\Source;
 
 use League\OAuth2\Client\Provider\AbstractProvider;
@@ -37,7 +39,7 @@ class MicrosoftHybridAuth extends OAuth2
             return;
         }
 
-        $idTokenData = $this->extraIdTokenAttributes($accessToken->getValues()['id_token']);
+        $idTokenData = $this->extraIdTokenAttributes((string)$accessToken->getValues()['id_token']);
         $prefix = $this->getAttributePrefix();
 
         if (array_key_exists('email', $idTokenData)) {
@@ -45,6 +47,9 @@ class MicrosoftHybridAuth extends OAuth2
         }
         if (array_key_exists('name', $idTokenData)) {
             $state['Attributes'][$prefix . 'name'] = [$idTokenData['name']];
+        }
+        if (array_key_exists('tid', $idTokenData)) {
+            $state['Attributes'][$prefix . 'tid'] = [$idTokenData['tid']];
         }
     }
 }

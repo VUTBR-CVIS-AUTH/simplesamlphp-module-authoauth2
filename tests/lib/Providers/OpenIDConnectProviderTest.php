@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Test\SimpleSAML\Providers;
 
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
-use League\OAuth2\Client\Token\AccessToken;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use SimpleSAML\Module\authoauth2\Providers\OpenIDConnectProvider;
 use Symfony\Component\HttpFoundation\Request;
@@ -11,16 +13,16 @@ use Test\SimpleSAML\MockOpenIDConnectProvider;
 
 class OpenIDConnectProviderTest extends TestCase
 {
-    public function idTokenErrorDataProvider(): array
+    public static function idTokenErrorDataProvider(): array
     {
         // phpcs:disable
         return [
             [
-                'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Im15a2V5In0.eyJzdWIiOiIxMjM0NTY3ODkwIiwiYXVkIjoiZXZpbCBjbGllbnQgaWQiLCJpYXQiOjE1MTYyMzkwMjIsImlzcyI6Im5pY2VpZHAifQ.T4JQmtmeES1r6On0KnBdJC3f7eFTPd8x_B5EM9c43RXaZHWaq_qpdcyyJzEYJ5er5YXe_hjaLmSybv0NqoVVfg',
+                'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Im15a2V5In0.eyJzdWIiOiIxMjM0NTY3ODkwIiwiYXVkIjoiZXZpbCBjbGllbnQgaWQiLCJpYXQiOjE1MTYyMzkwMjIsImlzcyI6Im5pY2VpZHAifQ.GJaMKCvWGW3kDc_T4D2IyGclsu0OqYDUox7Xdw_7VZm3PoRrv6wvm6QyJ6PswS1Tu7sJxBfVulchaHlgWoISU_NnMX496gO6RqZ717Co8S6QNbj44NCd_eY3ql3mQfdafUFq1U9iP3D8zGPKbjRvKiZJNw2_LIk_Lo-g_5vWE6BaVHmSBxsRAS5ezcLGXl5ZmdPoW3VlY3CsACh1zjvfS4HCtFFTmsi1kr0jnDU_oNTbBJbUJpWVT2aIUa3il_2sChOqdKyoJozSYM6na8-8Sx6fYAcnWksoSi6fz4s578MsawQIwMwrsQsgyXzoXrVwxDdjyHDJ0zdoJ4Cm0Jg4jQ',
                 "ID token has incorrect audience"
             ],
             [
-                'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Im15a2V5In0.eyJzdWIiOiIxMjM0NTY3ODkwIiwiYXVkIjoidGVzdCBjbGllbnQgaWQiLCJpYXQiOjE1MTYyMzkwMjIsImlzcyI6ImV2aWxpZHAifQ.NPAT8409vdVaQhh5OebxCPM6SxSNRdai3JoGo3cIabtYbjxf83jP-lj0thsbF_nD67QBCJhaz25Tjaw0anuhkw',
+                'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Im15a2V5In0.eyJzdWIiOiIxMjM0NTY3ODkwIiwiYXVkIjoidGVzdCBjbGllbnQgaWQiLCJpYXQiOjE1MTYyMzkwMjIsImlzcyI6ImV2aWxpZHAifQ.LRYfGNzL_MHC75GPuio7Hl8hPRTWVnTtvzK2MaoVBz1EViBDO_66_Az1wppM6zK7RJLLzxFWbsrsiza9AcfKsZhstg3DBwGMCsTN4VR8Nv4vs36x1jJ42-di-nwrGHmpIjEl3sivTFux_nLiFAfSqFBQCSII9IslbdXkkgaMua3Kti_qxqx_yMhHGZxJB3ToGl8NBhFe4Bre9Dw3mPicoTAcWjys2wpOh7i5PGNyGnyDto8oJwlzHngf7sXXPEB_vDeC2HjlTHLMD-C3vXab1gQL9FVwfKuQtratioD6ZSJ4tcbhGTu_BtZvs3p2vqQKIJCCYz4MpUQr1vngKksXvA',
                 "ID token has incorrect issuer"
             ],
             [
@@ -32,17 +34,18 @@ class OpenIDConnectProviderTest extends TestCase
     }
 
     /**
-     * @dataProvider idTokenErrorDataProvider
-     * @param $idToken
-     * @param $expectedMessage
+     * @param string $idToken
+     * @param string $expectedMessage
      */
-    public function testIdTokenValidationFails($idToken, $expectedMessage): void
+    #[DataProvider('idTokenErrorDataProvider')]
+    public function testIdTokenValidationFails(string $idToken, string $expectedMessage): void
     {
         $this->expectException(IdentityProviderException::class);
         $this->expectExceptionMessage($expectedMessage);
 
+        $configDir = !empty(getenv('SIMPLESAMLPHP_CONFIG_DIR')) ? (string)getenv('SIMPLESAMLPHP_CONFIG_DIR') : '';
         MockOpenIDConnectProvider::setSigningKeys([
-            'mykey' => file_get_contents(getenv('SIMPLESAMLPHP_CONFIG_DIR') . '/jwks-cert.pem')
+            'mykey' => file_get_contents($configDir . '/jwks-cert.pem')
                                                   ]);
         $provider = new MockOpenIDConnectProvider([
             'issuer' => 'niceidp',
