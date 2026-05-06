@@ -97,6 +97,10 @@ class AttributeScopeMap
         $mapped_attributes = [];
 
         foreach ($scopes as $scope) {
+            if (!is_string($scope) && !is_int($scope)) {
+                continue;
+            }
+
             if (array_key_exists($scope, $this->map)) {
                 if (!is_array($this->map[$scope])) {
                     $mapped_attributes[$this->map[$scope]] = $this->map[$scope];
